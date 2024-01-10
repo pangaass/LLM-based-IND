@@ -31,7 +31,7 @@ MASTER_PORT=$(shuf -n 1 -i 10000-65535)
 
 mkdir -p $OUTPUT_DIR
 
-torchrun --standalone --nnodes=1 --nproc_per_node=$NUM_GPUS  /workspace/pangyunhe/source_code/finetune_basemodel_demo/finetune.py \
+torchrun --standalone --nnodes=1 --nproc_per_node=$NUM_GPUS  finetune.py \
     --train_format input-output \
     --author_data $AUTHOR_PATH \
     --pub_data $PUB_PATH \
@@ -52,5 +52,5 @@ torchrun --standalone --nnodes=1 --nproc_per_node=$NUM_GPUS  /workspace/pangyunh
     --save_steps $SAVE_INTERVAL \
     --learning_rate $LR \
     --bf16 \
-    --deepspeed /workspace/pangyunhe/source_code/finetune_basemodel_demo/configs/deepspeed.json  2>&1 | tee ${OUTPUT_DIR}/train.log
+    --deepspeed configs/deepspeed.json  2>&1 | tee ${OUTPUT_DIR}/train.log
 
