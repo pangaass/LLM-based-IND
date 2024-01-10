@@ -1,4 +1,0 @@
-LICENSE       configs		output.log	  test_inference.py
-README.md     dataset		requirements.txt  test_script
-__pycache__   finetune.py	result.json	  trainer.py
-arguments.py  instruction.json	scripts		  utils.py
