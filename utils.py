@@ -313,23 +313,38 @@ class IND4EVAL(Dataset):
         self.max_target_length = max_target_length
         self.max_seq_length = max_source_length + max_target_length + 1
         author_keys = self.author.keys()
-        self.val_keys = []
+
+        self.val_set = []
         for key in author_keys:   
-            for pub_key in self.author[key]['normal_data']:
-                self.pub[pub_key]['label'] = 1 #表示正样本
-                self.pub[pub_key]['author'] = key 
-                self.val_keys.append(self.pub[pub_key])
+            for pub_key in self.author[key]['normal_data']:   
+                self.val_set.append({
+                    'pub':pub_key,
+                    'author':key,
+                    'label':1
+                }) 
             for pub_key in self.author[key]['outliers']:
-                self.pub[pub_key]['label'] = 0
-                self.pub[pub_key]['author'] = key
-                self.val_keys.append(self.pub[pub_key])
+                self.val_set.append({
+                    'pub':pub_key,
+                    'author':key,
+                    'label':0
+                }) 
+        # self.val_keys = []
+        # for key in author_keys:   
+        #     for pub_key in self.author[key]['normal_data']:
+        #         self.pub[pub_key]['label'] = 1 #表示正样本
+        #         self.pub[pub_key]['author'] = key 
+        #         self.val_keys.append(self.pub[pub_key])
+        #     for pub_key in self.author[key]['outliers']:
+        #         self.pub[pub_key]['label'] = 0
+        #         self.pub[pub_key]['author'] = key
+        #         self.val_keys.append(self.pub[pub_key])
         with open('/workspace/pangyunhe/source_code/finetune_basemodel_demo/instruction.json','r') as f:
             self.instruct = json.load(f)    
     def __len__(self):
-        return len(self.val_keys)
+        return len(self.val_set)
     
     def __getitem__(self, index):
-        profile = self.author[self.val_keys[index]['author']]['normal_data'] +self.author[self.val_keys[index]['author']]['outliers']
+        profile = self.author[self.val_set[index]['author']]['normal_data'] +self.author[self.val_set[index]['author']]['outliers']
         random.shuffle(profile)
         profile = [self.pub[p]['title'] for p in profile]
 
@@ -346,12 +361,31 @@ class IND4EVAL(Dataset):
             profile = profile[:p-1]
 
         profile_text = ' # '.join(profile)
-        title = self.val_keys[index]['title']
-        title = title if len(self.tokenizer.tokenize(title))<200 else '' #防止脏数据导致模型崩溃
+        title = self.pub[self.val_set[index]['pub']]['title']
+        title = title if len(self.tokenizer.tokenize(title))<200 else ' '.join(title.split(' ')[:50]) #防止脏数据导致模型崩溃
         context = self.instruct['instruction_classfication'].format(profile_text,title)
         return {
             "input_ids":context,
-            "author":self.val_keys[index]['author'],
-            "pub":self.val_keys[index]['id'],
-            "label": self.val_keys[index]['label']
+            "author":self.val_set[index]['author'],
+            "pub":self.val_set[index]['pub'],
+            "label": self.val_set[index]['label']
         }
+
+# 从数据集中数据中取出author的所有论文
+def get_profile(author:[str,list[str]], author_file: dict , pub_file: dict) -> [dict,list[dict]]:
+    return_dict = {}
+
+    if isinstance(author, list):
+        for a in author:
+            return_dict[a] = {
+                "normal_data":[pub_file[i] for i in author_file[a]['normal_data']],
+                "outliers":[pub_file[i] for i in author_file[a]['outliers']]
+            }
+    elif isinstance(author, str):
+        return_dict[author] = {
+            "normal_data":[pub_file[i] for i in author_file[author]['normal_data']],
+            "outliers":[pub_file[i] for i in author_file[author]['outliers']]
+        }
+    else:
+        raise TypeError("author must be str or list[str]")
+    return return_dict

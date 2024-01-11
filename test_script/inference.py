@@ -5,7 +5,7 @@ import os
 path = os.getcwd()
 
 dirs = os.listdir(os.path.join(path,'eval_result'))
-# dirs = [i for i in dirs if 'checkpoint' in i]
+dirs = ['result-2024-1-5latest.json']
 label_path = "dataset/val_data.json"
 with open(os.path.join(path,label_path), 'r', encoding='utf-8') as f:
     label_dict = json.load(f)
@@ -30,5 +30,5 @@ for dir in dirs:
             res_list[author]['normal_data'][pub]= logit
         else:
             res_list[author]['outliers'][pub]= logit
-    mean_AUC,mAP,acc, f1 = compute_metric(label_dict,res_list)
-    print(dir, mean_AUC,mAP,acc, f1)
+    mean_AUC, mAP, acc, f1 = compute_metric(label_dict,res_list)
+    print('checkpoint path:{}, AUC:{:.2f}, MAP:{:.2f}, ACC:{:.2f}, F1：{:.2f}'.format(dir, float(mean_AUC*100), float(mAP*100), float(acc*100), float(f1*100)))

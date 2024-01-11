@@ -38,7 +38,7 @@ class LoRATrainer(Trainer):
         logger.info(f"Saving model checkpoint to {output_dir}")
         model_to_save =    (self.model)
 
-        # 这个判断会导致模型保存全部参数，因此强制仅保存kv中的lora参数
+        # 这个判断会导致模型保存全部参数，因此强制仅保存lora参数
         # if isinstance(model_to_save, PreTrainedModel):
         #     state_dict = {k: v.to("cpu") for k, v in model_to_save.named_parameters() if v.requires_grad}
         #     # Using Hugging Face's save_pretrained instead of PyTorch's torch.save

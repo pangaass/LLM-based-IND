@@ -80,7 +80,7 @@ with torch.no_grad():
         if accelerator.is_main_process:
             result.extend(batch_result)
 if accelerator.is_main_process: 
-    with open(f'./eval_result/result-{checkpoint}.json', 'w') as f:
+    with open(f'./eval_result1/result-{checkpoint}.json', 'w') as f:
         json.dump(result, f)
 
     res_list = {}
@@ -103,8 +103,8 @@ if accelerator.is_main_process:
         "acc":acc,
         "f1":f1
     }
-
-    with open(f'./result.json', 'a+') as f:
+    print('checkpoint path:{}, AUC:{:.2f}, MAP:{:.2f}, ACC:{:.2f}, F1：{:.2f}'.format(dir, float(mean_AUC*100), float(mAP*100), float(acc*100), float(f1*100)))
+    with open(f'./result1.json', 'a+') as f:
         json.dump(res_write, f)
 
 
