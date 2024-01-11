@@ -15,10 +15,8 @@ GRAD_ACCUMULARION_STEPS=16
 EPOCH=2
 SAVE_INTERVAL=250
 WARMUP_RATIO=0.1
-
-
-
 SCHEDULAR=cosine
+
 RUN_NAME=text
 BASE_MODEL_PATH=/workspace/pangyunhe/models/ZhipuAI/chatglm3-6b-32k
 AUTHOR_PATH=/workspace/pangyunhe/dataset/whoiswho/train_pub.json

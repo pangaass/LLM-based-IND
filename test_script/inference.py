@@ -5,7 +5,7 @@ import os
 path = os.getcwd()
 
 dirs = os.listdir(os.path.join(path,'eval_result'))
-dirs = ['result-2024-1-5latest.json']
+# dirs = ['result-2024-1-5latest.json']
 label_path = "dataset/val_data.json"
 with open(os.path.join(path,label_path), 'r', encoding='utf-8') as f:
     label_dict = json.load(f)

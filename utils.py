@@ -31,11 +31,10 @@ class INDDataSet(Dataset):
         author_keys = self.author.keys()
         self.train_keys = []
         for key in author_keys :
-            
             if len(self.author[key]['normal_data']) > len(self.author[key]['outliers']): #用于平衡正负样本
                 n = min(len(self.author[key]['normal_data']) - len(self.author[key]['outliers']), 4 *  len(self.author[key]['outliers']))
                 neg = np.random.choice(self.author[key]['outliers'], n, replace = True).tolist()
-                # breakpoint()
+
                 for i in neg+self.author[key]['outliers']:
                     self.train_keys.append({
                         "pub": i,
@@ -62,30 +61,13 @@ class INDDataSet(Dataset):
         random.shuffle(self.train_keys)
         for key in author_keys:   
             for pub_key in self.author[key]['normal_data']:
-                # self.pub[pub_key]['author'] = key
                 self.pub[pub_key]['label'] = 1 #表示正样本
-                # self.pub[pub_key]['normal_data'] = self.author[key]['normal_data']
-                # self.pub[pub_key]['outliers'] = self.author[key]['outliers']
                 self.pub[pub_key]['author'] = key 
-            for pub_key in self.author[key]['outliers']:
-                # self.pub[pub_key]['author'] = key
-                self.pub[pub_key]['label'] = 0
-                # self.pub[pub_key]['normal_data'] = self.author[key]['normal_data']
-                # self.pub[pub_key]['outliers'] = self.author[key]['outliers']
-                self.pub[pub_key]['author'] = key 
-        # self.pub_keys = []
-        # for key in author_keys:
-        #     self.pub_keys += self.author[key]['normal_data'] + self.author[key]['outliers']  
-        
 
-            
-            ###用于平衡正负样本,没用了
-            # if len(self.author[key]['normal_data']) > len(self.author[key]['outliers']):
-            #     sampled_normal = random.sample(self.author[key]['normal_data'],len(self.author[key]['outliers']))
-            #     self.pub_keys += sampled_normal
-            # else:
-            #     self.pub_keys += self.author[key]['normal_data']
-            # self.pub_keys += self.author[key]['outliers']
+            for pub_key in self.author[key]['outliers']:
+                self.pub[pub_key]['label'] = 0
+                self.pub[pub_key]['author'] = key 
+
         with open('/workspace/pangyunhe/source_code/finetune_basemodel_demo/instruction.json','r') as f:
             self.instruct = json.load(f)
 
@@ -97,19 +79,6 @@ class INDDataSet(Dataset):
         return len(self.train_keys)
 
     def __getitem__(self, index):
-        
-        # def encode(sampled_hash):
-        #     title = self.pub[sampled_hash]
-        #     context = self.instruct['instruction_classfication'].format(profile_text,title)
-        #     input_ids = self.tokenizer.encode(text=context, add_special_tokens=True, truncation=True,
-        #                             max_length=self.max_source_length)
-        #     context_length = len(input_ids)
-        #     label_ids = self.yes_token if self.pub[sampled_hash]['label'] == 1 else self.no_token      
-        #     input_ids = input_ids + label_ids + [self.tokenizer.eos_token_id]
-        #     labels = [-100] * context_length + label_ids + [self.tokenizer.eos_token_id]
-
-        #     return (input_ids , labels)
-
         profile = self.author[self.train_keys[index]['author']]['normal_data'] +self.author[self.train_keys[index]['author']]['outliers']
         random.shuffle(profile)
         profile = [self.pub[p]['title'] for p in profile]
@@ -125,19 +94,17 @@ class INDDataSet(Dataset):
                 total_len += len_profile[p]
                 p += 1
             profile = profile[:p-1]
-        # breakpoint()
+
         profile_text = ' # '.join(profile)
         title = self.pub[self.train_keys[index]['pub']]['title']
         title = title if len(self.tokenizer.tokenize(title))<1000 else '' #防止脏数据导致模型崩溃
         context = self.instruct['instruction_classfication'].format(profile_text,title)
-        # breakpoint()
+
         input_ids = self.tokenizer.encode(text=context, add_special_tokens=True, truncation=True, max_length=self.max_source_length)
         label_ids = self.yes_token if self.pub[self.train_keys[index]['pub']]['label'] == 1 else self.no_token
         input_ids = input_ids + label_ids + [self.tokenizer.eos_token_id]
         labels = [-100] * (len(input_ids)-2) + label_ids + [self.tokenizer.eos_token_id]
-        # if len(input_ids) != len(labels):
-        # breakpoint()
-        breakpoint() 
+
         return {
             "input_ids":input_ids,
             "labels":labels,
@@ -145,33 +112,6 @@ class INDDataSet(Dataset):
             "pub":self.train_keys[index]['pub'],
         }
 
-        # if self.mode == 'train':
-            # 选择一个负样本（对于负样本来说则是正样本）
-            # if self.pub[self.pub_keys[index]]['label'] == 1:
-            #     neg_sample = random.sample(self.pub[self.pub_keys[index]]['normal_data'],1)[0]
-            # else:
-            #     neg_sample = random.sample(self.pub[self.pub_keys[index]]['outliers'])[0]
-            # pos = encode(self.pub_keys[index])
-            # neg = encode(neg_sample)
-            
-            ### borrowed from ChatGLM3/finetune_basemodel_demo/preprocess_utils.py
-            # labels = [self.tokenizer.pad_token_id] * context_length + b_ids + [self.tokenizer.eos_token_id]
-            #batch_size=1暂时不用pad_to_max_len
-            # pad_len = self.max_seq_length - len(input_ids)
-            # input_ids = input_ids + [self.tokenizer.pad_token_id] * pad_len
-            # labels = labels + [self.tokenizer.pad_token_id] * pad_len
-
-            # return {
-            #     "input_ids": [pos[0],neg[0]],
-            #     "labels": [pos[1],neg[1]]
-            # }
-        # elif self.mode == 'val':
-        #     return {
-        #         "author": self.pub[self.pub_keys[index]]['author'],
-        #         "pub": self.pub_keys[index],
-        #         "input_ids": encode(self.pub_keys[index]),
-        #         "labels": self.pub[self.pub_keys[index]]['label']
-        #     }
 @dataclass
 class DataCollatorForIND:
     """
