@@ -5,27 +5,30 @@ import os
 path = os.getcwd()
 
 dirs = os.listdir(os.path.join(path,'eval_result'))
-
+# dirs = [i for i in dirs if 'checkpoint' in i]
 label_path = "dataset/val_data.json"
 with open(os.path.join(path,label_path), 'r', encoding='utf-8') as f:
     label_dict = json.load(f)
-
+data = []
+for author in label_dict.keys():
+    data.extend(label_dict[author]['normal_data'])
+    data.extend(label_dict[author]['outliers'])
 
 for dir in dirs:
     with open(os.path.join(path,'eval_result',dir), 'r', encoding='utf-8') as f:
         result = json.load(f)
-
 
     res_list = {}
     for i in result:
         [author,pub,pred,yes_prob,no_prob,label] = i
         if author not in res_list.keys():
             res_list[author] = {}
-            res_list[author]['normal_data'] =[]
-            res_list[author]['outliers'] =[]
+            res_list[author]['normal_data'] ={}
+            res_list[author]['outliers'] ={}
+        logit = yes_prob/(yes_prob+no_prob)
         if pred:
-            res_list[author]['normal_data'].append(pub)
+            res_list[author]['normal_data'][pub]= logit
         else:
-            res_list[author]['outliers'].append(pub)
-    acc, f1 = compute_metric(label_dict,res_list)
-    print(dir, acc, f1)
+            res_list[author]['outliers'][pub]= logit
+    mean_AUC,mAP,acc, f1 = compute_metric(label_dict,res_list)
+    print(dir, mean_AUC,mAP,acc, f1)
